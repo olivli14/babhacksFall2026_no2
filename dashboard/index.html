@@ -1,0 +1,350 @@
+<!doctype html>
+<!-- AI-generated (Claude Code). Recourse demo dashboard. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recourse</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0b0e14; --panel: #131824; --panel2: #1a2130; --line: #263042; --text: #e6eaf2; --muted: #8b95a8;
+    --accent: #f0b90b; --green: #2ecc71; --blue: #4aa3ff; --orange: #ff9f43; --red: #ff5c5c; --purple: #a78bfa;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: .3px; }
+  header h1 span { color: var(--accent); }
+  .tag { color: var(--muted); font-size: 13px; }
+  .pill { padding: 3px 10px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .pill a { color: var(--blue); text-decoration: none; }
+  main { display: grid; grid-template-columns: 380px 1fr; gap: 16px; padding: 16px 22px; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; padding: 12px 16px; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 700px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .kpi .v { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .kpi .l { color: var(--muted); font-size: 12px; }
+  textarea, input, select { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; }
+  textarea { resize: vertical; min-height: 54px; }
+  .row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  button { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+  button.danger { border-color: var(--red); color: var(--red); }
+  button.ok { border-color: var(--green); color: var(--green); }
+  button.mic { min-width: 40px; }
+  button.mic.on { background: var(--red); color: #fff; border-color: var(--red); }
+  button:disabled { opacity: .5; cursor: wait; }
+  .scen { display: grid; grid-template-columns: 1fr; gap: 6px; }
+  .scen button { text-align: left; display: flex; justify-content: space-between; gap: 8px; }
+  .scen small { color: var(--muted); }
+  .say { background: var(--panel2); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 6px; margin-top: 8px; font-size: 13px; }
+  .confirm { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange) inset; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr.p:hover td { background: #161c29; cursor: pointer; }
+  .chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .r-instant { background: rgba(46,204,113,.15); color: var(--green); }
+  .r-timed_escrow { background: rgba(74,163,255,.15); color: var(--blue); }
+  .r-delivery_escrow { background: rgba(255,159,67,.15); color: var(--orange); }
+  .r-block { background: rgba(255,92,92,.15); color: var(--red); }
+  .s { color: var(--muted); font-size: 12px; }
+  .bar { height: 6px; background: var(--panel2); border-radius: 3px; width: 70px; overflow: hidden; margin-top: 4px; }
+  .bar i { display: block; height: 100%; }
+  .reasons { font-size: 12px; color: var(--muted); padding: 4px 0 4px 10px; }
+  .reasons b { color: var(--text); font-weight: 600; }
+  .log { max-height: 320px; overflow: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .log div { padding: 3px 0; border-bottom: 1px dashed var(--line); }
+  .log .k { display: inline-block; min-width: 64px; color: var(--accent); }
+  .log .k.block, .log .k.error { color: var(--red); } .log .k.decision { color: var(--purple); } .log .k.escrow { color: var(--orange); } .log .k.settle { color: var(--green); }
+  a.tx { color: var(--blue); text-decoration: none; font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 260px; gap: 16px; }
+  @media (max-width: 1250px) { .grid2 { grid-template-columns: 1fr; } }
+  .toast { position: fixed; bottom: 18px; right: 18px; background: var(--red); color: #fff; padding: 10px 14px; border-radius: 8px; display: none; max-width: 420px; }
+  .tablewrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Re<span>course</span></h1>
+  <span class="tag">Buyer protection for AI agents paying in stablecoins</span>
+  <span style="flex:1"></span>
+  <span class="pill" id="net">…</span>
+  <span class="pill" id="addrs"></span>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h2>1 · Spending mandate (voice)</h2>
+      <textarea id="mandateText">You can spend up to $100 a day on coffee and office supplies.</textarea>
+      <div class="row">
+        <button class="mic" data-target="mandateText" data-then="propose" title="Speak">🎙</button>
+        <button onclick="propose()">Propose mandate</button>
+        <button class="primary" id="signBtn" onclick="signMandate()" disabled>Approve &amp; sign</button>
+      </div>
+      <div id="mandateBox"></div>
+    </div>
+
+    <div class="card" id="confirmCard" style="display:none">
+      <h2>⚠ Voice confirmation needed</h2>
+      <div class="say" id="confirmScript"></div>
+      <div class="row">
+        <button onclick="speak(document.getElementById('confirmScript').textContent)">🔊 Read aloud</button>
+        <button class="mic" data-target="confirmAnswer" data-then="answer" title="Answer by voice">🎙 Answer</button>
+        <button class="ok" onclick="confirmPay(true)">Yes, continue</button>
+        <button class="danger" onclick="confirmPay(false)">No</button>
+      </div>
+      <input id="confirmAnswer" type="hidden">
+    </div>
+
+    <div class="card">
+      <h2>2 · Agent shopping</h2>
+      <div class="scen" id="scenarios"></div>
+    </div>
+
+    <div class="card">
+      <h2>3 · Dispute (voice)</h2>
+      <select id="disputeTarget"></select>
+      <textarea id="disputeText" style="margin-top:8px">My package never came.</textarea>
+      <div class="row">
+        <button class="mic" data-target="disputeText" data-then="dispute" title="Speak">🎙</button>
+        <button class="primary" onclick="dispute()">File dispute</button>
+      </div>
+      <div id="disputeOut"></div>
+    </div>
+
+    <div class="card" id="elCard" style="display:none">
+      <h2>ElevenLabs agent</h2>
+      <div id="elWidget"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Agent wallet (mUSD)</div><div class="v" id="kWallet">–</div></div>
+      <div class="kpi"><div class="l">Held in escrow</div><div class="v" id="kHeld">–</div></div>
+      <div class="kpi"><div class="l">Spent today / cap</div><div class="v" id="kSpent">–</div></div>
+      <div class="kpi"><div class="l">Payments protected</div><div class="v" id="kProt">–</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Payments <span class="s" style="text-transform:none;letter-spacing:0">click a row for risk signals</span></h2>
+      <div class="tablewrap">
+      <table>
+        <thead><tr><th>ID</th><th>Merchant / item</th><th>Amount</th><th>Risk</th><th>Route</th><th>Status</th><th>Onchain</th><th></th></tr></thead>
+        <tbody id="payments"><tr><td colspan="8" class="s">No payments yet. Set a mandate, then let the agent shop.</td></tr></tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Merchant reputation (onchain)</h2>
+        <div class="tablewrap">
+        <table>
+          <thead><tr><th>Merchant</th><th>Address</th><th>Received</th><th>Settled</th><th>Disputes lost</th><th>Disputes won</th></tr></thead>
+          <tbody id="merchants"></tbody>
+        </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Routes</h2>
+        <canvas id="routeChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Audit trail</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let S = null, open = new Set(), elLoaded = false, chart;
+const ROUTE_LABEL = { instant: "Instant", timed_escrow: "Timed escrow", delivery_escrow: "Escrow + delivery", block: "Blocked" };
+const ROUTE_COLOR = { instant: "#2ecc71", timed_escrow: "#4aa3ff", delivery_escrow: "#ff9f43", block: "#ff5c5c" };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = (n) => "$" + Number(n).toFixed(2);
+
+async function api(path, body) {
+  const r = await fetch(path, { method: body ? "POST" : "GET", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json();
+  if (!r.ok) { toast(j.error || "Request failed"); throw new Error(j.error); }
+  return j;
+}
+function toast(m) { const t = $("toast"); t.textContent = m; t.style.display = "block"; clearTimeout(t._h); t._h = setTimeout(() => (t.style.display = "none"), 5000); }
+async function busy(btn, fn) { if (btn) btn.disabled = true; try { return await fn(); } finally { if (btn) btn.disabled = false; refresh(); } }
+
+// ---------- voice ----------
+let audio;
+async function speak(text) {
+  if (!text) return;
+  try {
+    if (S && S.voice.tts) {
+      const r = await fetch("/api/tts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) });
+      if (r.ok) { if (audio) audio.pause(); audio = new Audio(URL.createObjectURL(await r.blob())); return audio.play(); }
+    }
+  } catch (_) {}
+  speechSynthesis.cancel();
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+document.querySelectorAll("button.mic").forEach((b) => b.addEventListener("click", () => {
+  if (!SR) return toast("Speech recognition needs Chrome. Type instead.");
+  const rec = new SR(); rec.lang = "en-US"; rec.interimResults = true;
+  b.classList.add("on");
+  rec.onresult = (e) => { $(b.dataset.target).value = [...e.results].map((r) => r[0].transcript).join(" "); };
+  rec.onend = () => { b.classList.remove("on"); ({ propose, dispute, answer })[b.dataset.then]?.(); };
+  rec.start();
+}));
+
+// ---------- actions ----------
+async function propose() {
+  const r = await api("/api/mandate", { text: $("mandateText").value });
+  speak(r.message); refresh();
+}
+function signMandate() { return busy($("signBtn"), () => api("/api/mandate/sign", {})); }
+async function shop(scenario, btn) {
+  const r = await busy(btn, () => api("/api/agent/purchase", { scenario }));
+  if (r.payment.status === "awaiting_confirmation" || r.payment.status === "blocked") speak(r.message);
+}
+async function confirmPay(approve) {
+  const r = await busy(null, () => api("/api/confirm", { approve }));
+  speak(r.message);
+}
+function answer() {
+  const a = $("confirmAnswer").value;
+  if (/\b(yes|yeah|yep|sure|continue|go ahead|ok)\b/i.test(a)) confirmPay(true);
+  else if (/\b(no|nope|stop|cancel|don'?t)\b/i.test(a)) confirmPay(false);
+  else toast(`Didn't catch a yes or no: "${a}"`);
+}
+async function dispute() {
+  const payment_id = $("disputeTarget").value || undefined;
+  const r = await busy(null, () => api("/api/dispute", { description: $("disputeText").value, payment_id }));
+  $("disputeOut").innerHTML = `<div class="say">${esc(r.message)}</div>`;
+  speak(r.message);
+}
+const act = (path, payment_id, btn) => busy(btn, () => api(path, { payment_id }));
+const advance = (btn) => busy(btn, () => api("/api/time/advance", { hours: 25 }));
+
+// ---------- render ----------
+function render() {
+  const c = S.chain, contracts = S.contracts;
+  $("net").textContent = S.network === "localhost" ? "Local chain (Hardhat)" : "BSC Testnet";
+  $("addrs").innerHTML = Object.entries(contracts).map(([k, a]) =>
+    S.explorer[k] ? `<a href="${S.explorer[k]}" target="_blank">${k}</a>` : `<span title="${a}">${k}</span>`).join(" · ");
+  $("kWallet").textContent = c.walletBal.toFixed(2);
+  $("kHeld").textContent = c.held.toFixed(2);
+  $("kSpent").textContent = S.mandate ? `${c.spentToday.toFixed(0)} / ${S.mandate.dailyCap}` : "no mandate";
+  const prot = S.payments.filter((p) => p.route !== "instant").length;
+  $("kProt").textContent = `${prot} / ${S.payments.length}`;
+
+  // Mandate
+  const m = S.pendingMandate || S.mandate;
+  $("signBtn").disabled = !S.pendingMandate;
+  $("mandateBox").innerHTML = m ? `<div class="say">
+      <b>${S.pendingMandate ? "Waiting for your signature" : "Active onchain"}</b><br>
+      ${money(m.perTxCap)} per purchase · ${money(m.dailyCap)} per day<br>
+      Categories: ${m.categories.map(esc).join(", ")}${m.merchantRule === "known_only" ? " · known merchants only" : ""}<br>
+      <span class="s">Expires ${new Date(m.expiry * 1000).toLocaleString()} · hash ${m.hash.slice(0, 10)}…</span>
+      ${m.tx ? `<br>${txLink(m.tx, "setMandate tx")}` : ""}
+    </div>` : "";
+
+  // Scenarios
+  if (!$("scenarios").children.length) {
+    $("scenarios").innerHTML = Object.entries(S.scenarios).map(([k, v]) =>
+      `<button onclick="shop('${k}', this)"><span>${esc(k.replace(/_/g, " "))}</span><small>${esc(v.note)}</small></button>`).join("") +
+      (S.network === "localhost" ? `<button onclick="advance(this)"><span>⏩ advance 25h</span><small>local chain only: lets timed escrow release</small></button>` : "");
+  }
+
+  // Confirmation
+  const pending = S.payments.find((p) => p.status === "awaiting_confirmation");
+  $("confirmCard").style.display = pending ? "block" : "none";
+  if (pending) $("confirmScript").textContent = pending.confirmationScript;
+
+  // Dispute targets
+  const sel = $("disputeTarget"), prev = sel.value;
+  const disputable = S.payments.filter((p) => ["escrowed", "settled"].includes(p.status));
+  sel.innerHTML = `<option value="">Most recent escrowed payment</option>` +
+    disputable.map((p) => `<option value="${p.id}">${p.id} · ${esc(p.merchantName)} · ${money(p.amount)} (${p.status})</option>`).join("");
+  if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
+
+  // Payments
+  $("payments").innerHTML = S.payments.length ? S.payments.map((p) => {
+    const col = p.score >= 80 ? "var(--red)" : p.score >= 50 ? "var(--orange)" : p.score >= 25 ? "var(--blue)" : "var(--green)";
+    const actions = [];
+    if (p.status === "escrowed") {
+      actions.push(`<button onclick="event.stopPropagation();act('/api/deliver','${p.id}',this)">Mark delivered</button>`);
+      if (p.route === "timed_escrow") actions.push(`<button onclick="event.stopPropagation();act('/api/release','${p.id}',this)">Release</button>`);
+    }
+    const row = `<tr class="p" onclick="toggle('${p.id}')">
+      <td><b>${p.id}</b></td>
+      <td>${esc(p.merchantName)}<div class="s">${p.qty}× ${esc(p.item)}</div></td>
+      <td>${money(p.amount)}</td>
+      <td>${p.score}<div class="bar"><i style="width:${p.score}%;background:${col}"></i></div></td>
+      <td><span class="chip r-${p.route}">${ROUTE_LABEL[p.route]}</span></td>
+      <td>${esc(p.status.replace(/_/g, " "))}${p.dispute ? `<div class="s">${p.dispute.code} → ${esc(p.dispute.outcome || "open")}</div>` : ""}</td>
+      <td>${p.txs.map((t) => txLink(t, t.label)).join("<br>")}</td>
+      <td>${actions.join(" ")}</td></tr>`;
+    const detail = open.has(p.id) ? `<tr><td></td><td colspan="7"><div class="reasons">
+      ${p.blockReasons.map((b) => `<div>⛔ <b>${b.code}</b> ${esc(b.detail)}</div>`).join("")}
+      ${p.reasons.map((r) => `<div>+${r.points} <b>${r.code}</b> ${esc(r.detail)}</div>`).join("") || (p.blockReasons.length ? "" : "<div>No risk signals</div>")}
+      ${p.dispute && p.dispute.evidence ? `<div style="margin-top:6px"><b>Dispute ${p.dispute.code}</b>: “${esc(p.dispute.statement)}”</div>` +
+        p.dispute.evidence.map((e) => `<div>• ${esc(e.label)} <span class="s">(favors ${e.favors})</span></div>`).join("") +
+        `<div><b>${esc(p.dispute.rationale)}</b></div>` : p.dispute ? `<div><b>${esc(p.dispute.rationale)}</b></div>` : ""}
+      ${p.error ? `<div style="color:var(--red)">${esc(p.error)}</div>` : ""}
+    </div></td></tr>` : "";
+    return row + detail;
+  }).join("") : `<tr><td colspan="8" class="s">No payments yet. Set a mandate, then let the agent shop.</td></tr>`;
+
+  // Merchants
+  $("merchants").innerHTML = S.merchants.map((m) => `<tr>
+    <td>${esc(m.name)}</td><td class="s" title="${m.address}">${m.short}</td><td>${money(m.balance)}</td>
+    <td>${m.rep.settled}</td><td style="color:${m.rep.disputesLost ? "var(--red)" : "inherit"}">${m.rep.disputesLost}</td><td>${m.rep.disputesWon}</td></tr>`).join("");
+
+  // Chart
+  const counts = Object.keys(ROUTE_LABEL).map((r) => S.payments.filter((p) => p.route === r).length);
+  if (!chart && window.Chart) {
+    chart = new Chart($("routeChart"), {
+      type: "doughnut",
+      data: { labels: Object.values(ROUTE_LABEL), datasets: [{ data: counts, backgroundColor: Object.values(ROUTE_COLOR), borderColor: "#131824" }] },
+      options: { plugins: { legend: { position: "bottom", labels: { color: "#8b95a8", boxWidth: 10 } } }, cutout: "62%" },
+    });
+  } else if (chart) { chart.data.datasets[0].data = counts; chart.update("none"); }
+
+  // Log
+  $("log").innerHTML = S.log.map((l) => `<div><span class="s">${new Date(l.at).toLocaleTimeString()}</span> <span class="k ${l.kind}">${l.kind}</span> ${esc(l.message)} ${l.tx ? txLink(l.tx, "tx") : ""}</div>`).join("");
+
+  // ElevenLabs widget
+  if (S.voice.agentId && !elLoaded) {
+    elLoaded = true;
+    $("elCard").style.display = "block";
+    $("elWidget").innerHTML = `<elevenlabs-convai agent-id="${esc(S.voice.agentId)}"></elevenlabs-convai>`;
+    const s = document.createElement("script");
+    s.src = "https://unpkg.com/@elevenlabs/convai-widget-embed"; s.async = true;
+    document.body.appendChild(s);
+  }
+}
+function txLink(t, label) {
+  const h = t.hash.slice(0, 10) + "…";
+  return t.url ? `<a class="tx" href="${t.url}" target="_blank" onclick="event.stopPropagation()">${esc(label)} ${h}</a>` : `<span class="tx" title="${t.hash}">${esc(label)} ${h}</span>`;
+}
+function toggle(id) { open.has(id) ? open.delete(id) : open.add(id); render(); }
+
+async function refresh() {
+  try { S = await (await fetch("/api/state")).json(); render(); } catch (e) { console.error(e); }
+}
+refresh();
+setInterval(refresh, 1500);
+</script>
+</body>
+</html>

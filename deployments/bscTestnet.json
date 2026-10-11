@@ -1,0 +1,17 @@
+{
+  "network": "bscTestnet",
+  "chainId": 97,
+  "deployedAt": "2026-10-11T22:43:10.506Z",
+  "contracts": {
+    "MockUSD": "0x2441F78E0B1D06090079eD2580Dd32359ae9710F",
+    "Reputation": "0xc9682f1a725A5145f0d4dF4c73D08a20E3B4298E",
+    "RecourseEscrow": "0x0cBD7f142282e7A97cfc0d891886E07a6a9c161D",
+    "AgentWallet": "0xbA5730F05B0280850737D5BeEe3E1daA64cAC5Ea"
+  },
+  "roles": {
+    "owner": "0x71caE4CdeAcCF22F76CBf1a7246D1504d6D62612",
+    "agent": "0x71caE4CdeAcCF22F76CBf1a7246D1504d6D62612",
+    "riskSigner": "0x71caE4CdeAcCF22F76CBf1a7246D1504d6D62612",
+    "arbiter": "0x71caE4CdeAcCF22F76CBf1a7246D1504d6D62612"
+  }
+}
